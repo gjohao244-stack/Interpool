@@ -14,10 +14,38 @@
       color: #b30000; 
       text-align: center;
     }
-    /* Grid responsivo para mostrar las tarjetas */
+    
+    /* Contenedor de búsqueda */
+    .search-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .search-container input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 0.95rem;
+    }
+    .search-container button {
+      padding: 10px 20px;
+      background-color: #b30000;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .search-container button:hover {
+      background-color: #800000;
+    }
+
+    /* Grid responsivo */
     #results {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
       gap: 15px;
       margin-top: 20px;
     }
@@ -31,7 +59,6 @@
       flex-direction: column;
       align-items: center;
     }
-    /* Estilos para las fotografías */
     .avatar {
       width: 140px;
       height: 160px;
@@ -43,29 +70,73 @@
     }
     .card h3 {
       margin: 10px 0 5px 0;
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
     .card p {
       margin: 0;
       color: #555;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+    }
+
+    /* Paginación */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-top: 30px;
+    }
+    .pagination button {
+      padding: 8px 16px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
     }
   </style>
 </head>
 <body>
 
   <h1>Notificaciones Rojas - Interpol</h1>
+
+  <!-- Controles de búsqueda -->
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Buscar por apellido...">
+    <button onclick="handleSearch()">Buscar</button>
+  </div>
+
   <div id="results">Cargando datos...</div>
 
+  <!-- Controles de paginación -->
+  <div class="pagination">
+    <button id="prevBtn" onclick="changePage(-1)" disabled>Anterior</button>
+    <span id="pageIndicator">Página 1</span>
+    <button id="nextBtn" onclick="changePage(1)">Siguiente</button>
+  </div>
+
   <script>
+    let currentPage = 1;
+    let currentSearchTerm = '';
+
     async function loadNotices() {
+      const container = document.getElementById('results');
+      container.innerHTML = '<p>Cargando datos...</p>';
+
       try {
-        const res = await fetch('/api/notices');
+        const queryParams = new URLSearchParams({
+          page: currentPage,
+          name: currentSearchTerm
+        });
+
+        const res = await fetch(`/api/notices?${queryParams.toString()}`);
         const data = await res.json();
         
-        const container = document.getElementById('results');
         container.innerHTML = '';
-
         const notices = data._embedded?.notices || [];
         
         if (notices.length === 0) {
@@ -74,30 +145,45 @@
         }
 
         notices.forEach(notice => {
-          // Extraer la URL de la imagen en miniatura
           const imageUrl = notice._links?.thumbnail?.href || '';
 
           const div = document.createElement('div');
           div.className = 'card';
-
           div.innerHTML = `
             <img 
               class="avatar" 
               src="${imageUrl}" 
-              alt="Foto de ${notice.forename || ''} ${notice.name || ''}"
+              alt="Foto"
               onerror="this.src='https://via.placeholder.com/140x160?text=Sin+Foto';"
             />
             <h3>${notice.forename || ''} ${notice.name || ''}</h3>
             <p><strong>Nacionalidad:</strong> ${notice.nationalities ? notice.nationalities.join(', ') : 'Desconocida'}</p>
           `;
-          
           container.appendChild(div);
         });
+
+        // Actualizar UI de paginación
+        document.getElementById('pageIndicator').innerText = `Página ${currentPage}`;
+        document.getElementById('prevBtn').disabled = currentPage === 1;
+
       } catch (err) {
-        document.getElementById('results').innerHTML = '<p>Error al cargar los datos.</p>';
+        container.innerHTML = '<p>Error al cargar los datos.</p>';
       }
     }
 
+    function handleSearch() {
+      currentSearchTerm = document.getElementById('searchInput').value.trim();
+      currentPage = 1; // Reiniciar a la primera página con cada búsqueda
+      loadNotices();
+    }
+
+    function changePage(step) {
+      currentPage += step;
+      loadNotices();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Carga inicial
     loadNotices();
   </script>
 </body>
