@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notificaciones Rojas de Interpol</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      background-color: #f4f4f9; 
+    }
+    h1 { 
+      color: #b30000; 
+      text-align: center;
+    }
+    /* Grid responsivo para mostrar las tarjetas */
+    #results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .card { 
+      background: white; 
+      padding: 15px; 
+      border-radius: 8px; 
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    /* Estilos para las fotografías */
+    .avatar {
+      width: 140px;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 6px;
+      background-color: #e0e0e0;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .card h3 {
+      margin: 10px 0 5px 0;
+      font-size: 1.1rem;
+    }
+    .card p {
+      margin: 0;
+      color: #555;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Notificaciones Rojas - Interpol</h1>
+  <div id="results">Cargando datos...</div>
+
+  <script>
+    async function loadNotices() {
+      try {
+        const res = await fetch('/api/notices');
+        const data = await res.json();
+        
+        const container = document.getElementById('results');
+        container.innerHTML = '';
+
+        const notices = data._embedded?.notices || [];
+        
+        if (notices.length === 0) {
+          container.innerHTML = '<p>No se encontraron resultados.</p>';
+          return;
+        }
+
+        notices.forEach(notice => {
+          // Extraer la URL de la imagen en miniatura
+          const imageUrl = notice._links?.thumbnail?.href || '';
+
+          const div = document.createElement('div');
+          div.className = 'card';
+
+          div.innerHTML = `
+            <img 
+              class="avatar" 
+              src="${imageUrl}" 
+              alt="Foto de ${notice.forename || ''} ${notice.name || ''}"
+              onerror="this.src='https://via.placeholder.com/140x160?text=Sin+Foto';"
+            />
+            <h3>${notice.forename || ''} ${notice.name || ''}</h3>
+            <p><strong>Nacionalidad:</strong> ${notice.nationalities ? notice.nationalities.join(', ') : 'Desconocida'}</p>
+          `;
+          
+          container.appendChild(div);
+        });
+      } catch (err) {
+        document.getElementById('results').innerHTML = '<p>Error al cargar los datos.</p>';
+      }
+    }
+
+    loadNotices();
+  </script>
+</body>
+</html>
