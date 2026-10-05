@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Notificaciones Rojas de Interpol</title>
+  <title>Notificaciones Rojas - Interpol</title>
   <style>
     body { 
       font-family: Arial, sans-serif; 
@@ -14,8 +14,6 @@
       color: #b30000; 
       text-align: center;
     }
-    
-    /* Contenedor de búsqueda */
     .search-container {
       display: flex;
       justify-content: center;
@@ -28,6 +26,7 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 0.95rem;
+      width: 250px;
     }
     .search-container button {
       padding: 10px 20px;
@@ -41,11 +40,9 @@
     .search-container button:hover {
       background-color: #800000;
     }
-
-    /* Grid responsivo */
     #results {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 15px;
       margin-top: 20px;
     }
@@ -77,8 +74,6 @@
       color: #555;
       font-size: 0.85rem;
     }
-
-    /* Paginación */
     .pagination {
       display: flex;
       justify-content: center;
@@ -104,7 +99,6 @@
 
   <h1>Notificaciones Rojas - Interpol</h1>
 
-  <!-- Controles de búsqueda -->
   <div class="search-container">
     <input type="text" id="searchInput" placeholder="Buscar por apellido...">
     <button onclick="handleSearch()">Buscar</button>
@@ -112,7 +106,6 @@
 
   <div id="results">Cargando datos...</div>
 
-  <!-- Controles de paginación -->
   <div class="pagination">
     <button id="prevBtn" onclick="changePage(-1)" disabled>Anterior</button>
     <span id="pageIndicator">Página 1</span>
@@ -128,16 +121,20 @@
       container.innerHTML = '<p>Cargando datos...</p>';
 
       try {
-        // Construimos los parámetros dinámicamente
-        const queryParams = new URLSearchParams({ page: currentPage });
+        const queryParams = new URLSearchParams();
+        queryParams.append('page', currentPage);
 
-        // Solo añadimos el término de búsqueda si no está vacío
         if (currentSearchTerm && currentSearchTerm.trim() !== '') {
           queryParams.append('name', currentSearchTerm.trim());
         }
 
         const res = await fetch(`/api/notices?${queryParams.toString()}`);
         const data = await res.json();
+
+        if (data.error) {
+          container.innerHTML = `<p>Error del servidor: ${data.error}</p>`;
+          return;
+        }
         
         container.innerHTML = '';
         const notices = data._embedded?.notices || [];
@@ -165,22 +162,22 @@
           container.appendChild(div);
         });
 
-        // Actualizar UI de paginación
         document.getElementById('pageIndicator').innerText = `Página ${currentPage}`;
         document.getElementById('prevBtn').disabled = currentPage === 1;
 
       } catch (err) {
-        container.innerHTML = '<p>Error al cargar los datos.</p>';
+        container.innerHTML = '<p>Error al cargar los datos de Interpol.</p>';
       }
     }
 
     function handleSearch() {
       currentSearchTerm = document.getElementById('searchInput').value.trim();
-      currentPage = 1; // Reiniciar a la primera página con cada búsqueda
+      currentPage = 1;
       loadNotices();
     }
 
     function changePage(step) {
+      if (currentPage + step < 1) return;
       currentPage += step;
       loadNotices();
       window.scrollTo({ top: 0, behavior: 'smooth' });
