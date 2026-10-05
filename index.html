@@ -128,10 +128,13 @@
       container.innerHTML = '<p>Cargando datos...</p>';
 
       try {
-        const queryParams = new URLSearchParams({
-          page: currentPage,
-          name: currentSearchTerm
-        });
+        // Construimos los parámetros dinámicamente
+        const queryParams = new URLSearchParams({ page: currentPage });
+
+        // Solo añadimos el término de búsqueda si no está vacío
+        if (currentSearchTerm && currentSearchTerm.trim() !== '') {
+          queryParams.append('name', currentSearchTerm.trim());
+        }
 
         const res = await fetch(`/api/notices?${queryParams.toString()}`);
         const data = await res.json();

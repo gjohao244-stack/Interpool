@@ -6,25 +6,31 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public'))); // Servir frontend si lo tienes en carpeta public/
 
-// Servir index.html en la raíz
+// Servir archivos estáticos si decides colocarlos en /public en el futuro
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Servir el archivo index.html en la ruta principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Proxy para la API de Interpol con soporte para parámetros
+// Proxy para la API de Interpol
 app.get('/api/notices', async (req, res) => {
   try {
     const { name, nationality, page = 1 } = req.query;
 
-    // Construir la URL con los parámetros que pida el usuario
     const params = new URLSearchParams();
     params.append('resultPerPage', '20');
     params.append('page', page);
     
-    if (name) params.append('name', name);
-    if (nationality) params.append('nationality', nationality);
+    // Solo agregamos name o nationality si el usuario escribió algo (evita enviar cadenas vacías "")
+    if (name && name.trim() !== '') {
+      params.append('name', name.trim());
+    }
+    if (nationality && nationality.trim() !== '') {
+      params.append('nationality', nationality.trim());
+    }
 
     const interpolUrl = `https://ws-public.interpol.int/notices/v1/red?${params.toString()}`;
     
@@ -40,5 +46,5 @@ app.get('/api/notices', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
